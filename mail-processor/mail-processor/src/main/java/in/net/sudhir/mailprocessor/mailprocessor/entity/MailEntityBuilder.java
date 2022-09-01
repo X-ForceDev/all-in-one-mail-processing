@@ -29,13 +29,14 @@ public class MailEntityBuilder {
         String[] usernames = environment.getProperty(mailProvider + ".ids.list").split(";");
         for(String username : usernames){
             MailEntity entity = null;
+            String userName = environment.getProperty(username + ".gmail.imap.username");
             String password = encryptionService.decryptText(environment.getProperty(username + ".gmail.imap.password"));
             String host = environment.getProperty(mailProvider + ".imap.host");
             String port = environment.getProperty(mailProvider + ".imap.port");
             String protocol = environment.getProperty(mailProvider + ".imap.protocol");
             String sslenable = environment.getProperty(mailProvider + ".imap.ssl.enable");
             if(mailProvider.equals(AppConstants.MailProviders.GMAIL_PROVIDER)){
-                entity = new MailEntity(username,password,host,port, protocol, sslenable);
+                entity = new MailEntity(userName,password,host,port, protocol, sslenable);
                 entities.add(entity);
             }
         }
