@@ -91,6 +91,7 @@ public class MailProcessor {
                             }else{
                                 message.setFlag(Flags.Flag.DELETED, true);
                                 deletedMailCount.getAndIncrement();
+                                writeIntoFile(message.getFrom()[0].toString() + " | " + message.getSubject() + "|" + message.getContent().toString(), provider, entity.userName);
                             }
                         } catch (MessagingException e) {
                             logger.error("Error Occurred: " + e.getMessage());
