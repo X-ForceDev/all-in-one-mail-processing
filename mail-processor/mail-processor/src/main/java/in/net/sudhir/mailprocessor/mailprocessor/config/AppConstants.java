@@ -10,5 +10,6 @@ public class AppConstants {
 
     public interface MailProviders{
         public static final String GMAIL_PROVIDER = "gmail";
+        public static final String OUTLOOK_PROVIDER = "outlook";
     }
 }

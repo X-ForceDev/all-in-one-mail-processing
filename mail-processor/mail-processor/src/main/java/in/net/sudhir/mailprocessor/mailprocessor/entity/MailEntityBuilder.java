@@ -28,15 +28,19 @@ public class MailEntityBuilder {
         List<MailEntity> entities = new ArrayList<>();
         String[] usernames = environment.getProperty(mailProvider + ".ids.list").split(";");
         for(String username : usernames){
+            String propertyPrefix = username + "." + mailProvider;
             MailEntity entity = null;
-            String userName = environment.getProperty(username + ".gmail.imap.username");
-            String password = encryptionService.decryptText(environment.getProperty(username + ".gmail.imap.password"));
+            String userName = environment.getProperty(propertyPrefix + ".imap.username");
+            String password = encryptionService.decryptText(environment.getProperty(propertyPrefix + ".imap.password"));
             String host = environment.getProperty(mailProvider + ".imap.host");
             String port = environment.getProperty(mailProvider + ".imap.port");
             String protocol = environment.getProperty(mailProvider + ".imap.protocol");
             String sslenable = environment.getProperty(mailProvider + ".imap.ssl.enable");
             if(mailProvider.equals(AppConstants.MailProviders.GMAIL_PROVIDER)){
-                entity = new MailEntity(userName,password,host,port, protocol, sslenable);
+                entity = new GMailEntity(userName,password,host,port, protocol, sslenable);
+                entities.add(entity);
+            }else if(mailProvider.equals(AppConstants.MailProviders.OUTLOOK_PROVIDER)){
+                entity = new OutlookMailEntity(userName,password,host,port, sslenable, protocol);
                 entities.add(entity);
             }
         }

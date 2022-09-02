@@ -148,6 +148,7 @@ public class MailProcessor {
                     Message[] messageobjs = inbox.getMessages();
                     AtomicInteger loopcount = new AtomicInteger();
                     List<Statistics> statsList = new ArrayList<>();
+                    logger.info("Number of Messages: " + messageobjs.length);
                     Arrays.asList(messageobjs).stream().forEach(message -> {
                         logger.info("Messages Processed: " + loopcount);
                         String s = null;

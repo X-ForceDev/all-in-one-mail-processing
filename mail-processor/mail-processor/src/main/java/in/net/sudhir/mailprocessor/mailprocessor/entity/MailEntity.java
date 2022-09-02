@@ -7,6 +7,7 @@ package in.net.sudhir.mailprocessor.mailprocessor.entity;
  Description:
  */
 public class MailEntity {
+
     public String userName;
     public String password;
     public String hostname;
@@ -14,13 +15,20 @@ public class MailEntity {
     public String protocol;
     public String sslenable;
 
-    public MailEntity(String userName, String password, String hostname, String port, String protocol, String sslenable) {
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
         this.password = password;
-        this.hostname = hostname;
-        this.port = port;
-        this.protocol = protocol;
-        this.sslenable = sslenable;
     }
 
     public String getHostname() {
@@ -37,22 +45,6 @@ public class MailEntity {
 
     public void setPort(String port) {
         this.port = port;
-    }
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public String getProtocol() {
