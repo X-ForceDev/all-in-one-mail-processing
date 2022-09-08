@@ -1,83 +1,12 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
 spring:
-  kafka:
-    producer:
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      bootstrap-servers: 192.168.1.106:9092
-  datasource:
-    driverClassName: com.mysql.cj.jdbc.Driver
-    password: ENC(fIEwy2BmSBDfu8/OP60hflNTm//seUbT)
-    username: sudhir
-    testOnBorrow: 'true'
-    url: jdbc:mysql://192.168.1.106:10003/mailprocessordb?autoReconnect=true&useSSL=false&useUnicode=yes&characterEncoding=UTF-8
-    validationQuery: SELECT 1
-  jpa:
-    properties:
-      hibernate:
-        jdbc:
-          batch_size: '30'
-        order_inserts: 'true'
-    hibernate:
-      ddl-auto: update
-    database-platform: org.hibernate.dialect.MySQL5Dialect
-    show-sql: 'true'
-outlook:
-  imap:
-    ssl:
-      enable: 'true'
-    port: '993'
-    protocol: imaps
-    host: outlook.office365.com
-  ids:
-    list: bsudhir6;sudhirpersonal
-jasypt:
-  encryptor:
-    algorithm: PBEWithMD5AndDES
-    iv-generator-classname: org.jasypt.iv.NoIvGenerator
-    password: ${ENCRYPTION_CODE}
-gmail:
-  imap:
-    protocol: imaps
-    ssl:
-      enable: 'true'
-    port: '993'
-    host: imap.gmail.com
-  ids:
-    list: boddusudhir;sudheer622;bsudhir6;
-boddusudhir:
-  gmail:
-    imap:
-      password: POvezUxd5yBLZtKBWokEo0i0BCRjoUxsAZUxpO48N2Y=
-      username: boddu.sudhir@gmail.com
-deleted:
-  email:
-    info:
-      file:
-        location: /files/mailprocessorfiles/
-        nodeValue: -deleted-mails.txt
-sudheer622:
-  gmail:
-    imap:
-      username: sudheer622@gmail.com
-      password: MdgDsY1LRUqy2+YsZ3fGSC8E2n600tO0zM9P6x2PV94=
-sudheerb:
-  gmail:
-    imap:
-      password: 7d0WCjy6ewfTclGBYLWHu8mpr8vSZjClEJfk9kqd+Q4=
-      username: sudheer.b@sreedattha.ac.in
-sudhirpersonal:
-  outlook:
-    imap:
-      username: sudhir.personal@outlook.com
-      password: sZfNqdYGK2dJKuiUkjTlWBAXz2FieuhA+irNlzd3WN8=
-bsudhir6:
-  gmail:
-    imap:
-      username: bsudhir6@gmail.com
-      password: 5gX2on2dm+cbAPm37IbmS7PrQRAJxizYJrLq/ecxUrg=
-  outlook:
-    imap:
-      username: bsudhir6@hotmail.com
-      password: xClaW+YMeHe9T52oBzw3nzWeAai2zdkInmE9D/twsHM=
-all:
-  providers: outlook;gmail
+  config:
+#    import: optional:configserver:http://192.168.1.106:10001/all-configs
+  application:
+    name: mail-processor
+  profiles:
+    active: prod
