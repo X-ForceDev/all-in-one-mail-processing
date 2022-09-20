@@ -12,6 +12,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import javax.mail.*;
+import javax.mail.search.FromStringTerm;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -177,6 +178,55 @@ public class MailProcessor {
                     }
                     dataService.deleteAllInBatch();
                     dataService.populateStatistics(statsList);
+//                    kafkaService.sendMailsStatsInfo(statsList);
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public void deleteFromBlockedSenders(){
+        String[] providers = environment.getProperty("all.providers").split(";");
+        Calendar newDate = Calendar.getInstance();
+        newDate.add(Calendar.DATE, -30);
+        Map<String, Long> stats = new HashMap<>();
+        AtomicInteger deletedMailCount = new AtomicInteger(0);
+        for(String provider : providers){
+            logger.info("Processing Provider: " + provider);
+            List<MailEntity> entities = mailEntityBuilder.build(provider);
+            for(MailEntity entity : entities){
+                logger.info("Processing UserName: " + entity.getUserName());
+                Properties props = new Properties();
+                props.setProperty("mail.store.protocol",entity.getProtocol());
+//                props.setProperty("mail.debug", "true");
+                props.setProperty("mail.imap.host",entity.getHostname());
+                props.setProperty("mail.imap.port", entity.getPort());
+                props.setProperty("mail.imap.ssl.enable",entity.getSslenable());
+                Session session = Session.getDefaultInstance(props, null);
+                try{
+                    Store store = session.getStore(entity.getProtocol());
+                    store.connect(entity.getHostname(), Integer.parseInt(entity.getPort()), entity.getUserName(), entity.getPassword());
+                    Folder inbox = store.getFolder("INBOX");
+                    inbox.open(Folder.READ_WRITE);
+                    List<String> blockedSenders = dataService.getBlockedEmailIds();
+                    AtomicInteger loopcount = new AtomicInteger();
+                    for(String blockedSender : blockedSenders){
+                        logger.info("Deleting message from sender: " + blockedSender);
+                        Message[] messagesFromBlockedSenders = inbox.search(new FromStringTerm(blockedSender));
+                        for(Message message : messagesFromBlockedSenders){
+                            if(message.getSentDate().getTime() < newDate.getTimeInMillis()){
+                                message.setFlag(Flags.Flag.DELETED, true);
+                                deletedMailCount.getAndIncrement();
+                                writeIntoFile( blockedSender + " | " + message.getSubject() + "|" + message.getContent().toString(), provider, entity.userName);
+                                logger.info("Deleted Message Count -  " + deletedMailCount.get());
+                            }
+                        }
+                        loopcount.getAndIncrement();
+                    }
+                    inbox.expunge();
+                    inbox.close();
+                    store.close();
 //                    kafkaService.sendMailsStatsInfo(statsList);
                 }catch(Exception e){
                     e.printStackTrace();
