@@ -211,19 +211,31 @@ public class MailProcessor {
                     inbox.open(Folder.READ_WRITE);
                     List<String> blockedSenders = dataService.getBlockedEmailIds();
                     AtomicInteger loopcount = new AtomicInteger();
-                    for(String blockedSender : blockedSenders){
+                    blockedSenders.stream().forEach(blockedSender -> {
                         logger.info("Deleting message from sender: " + blockedSender);
-                        Message[] messagesFromBlockedSenders = inbox.search(new FromStringTerm(blockedSender));
+                        Message[] messagesFromBlockedSenders = new Message[0];
+                        try {
+                            messagesFromBlockedSenders = inbox.search(new FromStringTerm(blockedSender));
+                        } catch (MessagingException e) {
+                            throw new RuntimeException(e);
+                        }
                         for(Message message : messagesFromBlockedSenders){
-                            if(message.getSentDate().getTime() < newDate.getTimeInMillis()){
-                                message.setFlag(Flags.Flag.DELETED, true);
-                                deletedMailCount.getAndIncrement();
-                                writeIntoFile( blockedSender + " | " + message.getSubject() + "|" + message.getContent().toString(), provider, entity.userName);
-                                logger.info("Deleted Message Count -  " + deletedMailCount.get());
+                            try {
+                                if(message.getSentDate().getTime() < newDate.getTimeInMillis()){
+                                    message.setFlag(Flags.Flag.DELETED, true);
+                                    deletedMailCount.getAndIncrement();
+                                    writeIntoFile( blockedSender + " | " + message.getSubject() + "|" + message.getContent().toString(), provider, entity.userName);
+                                    logger.info("Deleted Message Count -  " + deletedMailCount.get());
+                                }
+                            } catch (MessagingException e) {
+                                throw new RuntimeException(e);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
                             }
                         }
                         loopcount.getAndIncrement();
-                    }
+                    });
+
                     inbox.expunge();
                     inbox.close();
                     store.close();
