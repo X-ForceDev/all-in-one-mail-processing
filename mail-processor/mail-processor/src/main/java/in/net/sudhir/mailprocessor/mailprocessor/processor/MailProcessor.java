@@ -237,7 +237,7 @@ public class MailProcessor {
 
     public void writeIntoFile(String text, String provider, String username){
         try{
-            String fileName = environment.getProperty("deleted.email.info.file.location") + provider + "-" + username + "-" + environment.getProperty("deleted.email.info.file");
+            String fileName = environment.getProperty("deleted.email.info.file.location") + provider + "-" + username + "-" + environment.getProperty("deleted.email.info.file.nodeValue");
             Files.writeString(
                     Path.of(fileName),
                     text + System.lineSeparator(),
