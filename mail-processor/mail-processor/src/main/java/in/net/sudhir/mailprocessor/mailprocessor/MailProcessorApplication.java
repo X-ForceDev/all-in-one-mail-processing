@@ -38,6 +38,8 @@ public class MailProcessorApplication {
                 mailProcessor.deleteEmailsFromBlockedList();
             } else if (args[0].equals("DELETE_FROM_BLOCKED_SENDERS")) {
                 mailProcessor.deleteFromBlockedSenders();
+            } else if (args[0].equals("CUSTOM_DELETE_FROM_BLOCKED_SENDERS")) {
+                mailProcessor.customDeleteFromBlockedSenders(args[1], args[2]);
             }
 
         };

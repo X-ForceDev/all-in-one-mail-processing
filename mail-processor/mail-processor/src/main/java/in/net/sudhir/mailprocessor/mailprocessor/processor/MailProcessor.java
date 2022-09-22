@@ -1,10 +1,14 @@
 package in.net.sudhir.mailprocessor.mailprocessor.processor;
 
+import in.net.sudhir.mailprocessor.mailprocessor.config.AppConstants;
+import in.net.sudhir.mailprocessor.mailprocessor.entity.GMailEntity;
 import in.net.sudhir.mailprocessor.mailprocessor.entity.MailEntity;
 import in.net.sudhir.mailprocessor.mailprocessor.entity.MailEntityBuilder;
+import in.net.sudhir.mailprocessor.mailprocessor.entity.OutlookMailEntity;
 import in.net.sudhir.mailprocessor.mailprocessor.model.Statistics;
 import in.net.sudhir.mailprocessor.mailprocessor.service.DataService;
 
+import in.net.sudhir.mailprocessor.mailprocessor.service.EncryptionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +48,9 @@ public class MailProcessor {
 
 //    @Autowired
 //    KafkaService kafkaService;
+
+    @Autowired
+    EncryptionService encryptionService;
 
     public void deleteEmailsFromBlockedList(){
         String[] providers = environment.getProperty("all.providers").split(";");
@@ -256,5 +263,71 @@ public class MailProcessor {
                     CREATE, APPEND
             );
         }catch(Exception e){System.out.println(e);}
+    }
+
+    public void customDeleteFromBlockedSenders(String provider, String username) {
+        Calendar newDate = Calendar.getInstance();
+        newDate.add(Calendar.DATE, -30);
+        AtomicInteger deletedMailCount = new AtomicInteger(0);
+        MailEntity entity = null;
+        List<String> blockedSenders = dataService.getBlockedEmailIds();
+        String propertyPrefix = username + "." + provider;
+        String userName = environment.getProperty(propertyPrefix + ".imap.username");
+        String password = encryptionService.decryptText(environment.getProperty(propertyPrefix + ".imap.password"));
+        String host = environment.getProperty(provider + ".imap.host");
+        String port = environment.getProperty(provider + ".imap.port");
+        String protocol = environment.getProperty(provider + ".imap.protocol");
+        String sslenable = environment.getProperty(provider + ".imap.ssl.enable");
+        if(provider.equalsIgnoreCase(AppConstants.MailProviders.GMAIL_PROVIDER)){
+            entity = new GMailEntity(userName,password,host,port, protocol, sslenable);
+        }else if(provider.equalsIgnoreCase(AppConstants.MailProviders.OUTLOOK_PROVIDER)){
+            entity = new OutlookMailEntity(userName,password,host,port, protocol, sslenable);
+        }
+        logger.info("Processing UserName: " + entity.getUserName());
+        Properties props = new Properties();
+        props.setProperty("mail.store.protocol",entity.getProtocol());
+//                props.setProperty("mail.debug", "true");
+        props.setProperty("mail.imap.host",entity.getHostname());
+        props.setProperty("mail.imap.port", entity.getPort());
+        props.setProperty("mail.imap.ssl.enable",entity.getSslenable());
+        Session session = Session.getDefaultInstance(props, null);
+        try{
+            Store store = session.getStore(entity.getProtocol());
+            store.connect(entity.getHostname(), Integer.parseInt(entity.getPort()), entity.getUserName(), entity.getPassword());
+            Folder inbox = store.getFolder("INBOX");
+            inbox.open(Folder.READ_WRITE);
+            AtomicInteger loopcount = new AtomicInteger();
+            MailEntity finalEntity = entity;
+            blockedSenders.stream().forEach(blockedSender -> {
+                logger.info("Deleting message from sender: " + blockedSender);
+                Message[] messagesFromBlockedSenders = new Message[0];
+                try {
+                    messagesFromBlockedSenders = inbox.search(new FromStringTerm(blockedSender));
+                } catch (MessagingException e) {
+                    throw new RuntimeException(e);
+                }
+                for(Message message : messagesFromBlockedSenders){
+                    try {
+                        if(message.getSentDate().getTime() < newDate.getTimeInMillis()){
+                            message.setFlag(Flags.Flag.DELETED, true);
+                            deletedMailCount.getAndIncrement();
+                            writeIntoFile( blockedSender + " | " + message.getSubject() + "|" + message.getContent().toString(), provider, finalEntity.userName);
+                            logger.info("Deleted Message Count -  " + deletedMailCount.get());
+                        }
+                    } catch (MessagingException e) {
+                        throw new RuntimeException(e);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                loopcount.getAndIncrement();
+            });
+            inbox.expunge();
+            inbox.close();
+            store.close();
+//                    kafkaService.sendMailsStatsInfo(statsList);
+        }catch(Exception e){
+            e.printStackTrace();
+        }
     }
 }
